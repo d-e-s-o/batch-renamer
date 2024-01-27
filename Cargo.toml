@@ -2,6 +2,7 @@
 name = "batch-rename"
 version = "0.0.0"
 edition = "2021"
+default-run = "batch-rename"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -9,7 +10,13 @@ edition = "2021"
 name = "batch-rename"
 path = "src/batch-rename.rs"
 
+[[bin]]
+name = "print-rename"
+path = "src/print-rename.rs"
+
 [dependencies]
 anyhow = "1.0.68"
+clap = { version = "4.1.4", features = ["derive"] }
 futures = {version = "0.3", default-features = false, features = ["async-await", "std"]}
+tempfile = "3.3.0"
 tokio = { version = "1.34", features = ["macros", "rt"] }
