@@ -12,9 +12,11 @@ use std::process::Command;
 use std::process::Output;
 use std::process::Stdio;
 
-use anyhow::bail;
 use anyhow::Context as _;
 use anyhow::Result;
+
+use batch_rename::evaluate;
+use batch_rename::format_command;
 
 use clap::error::ErrorKind;
 use clap::Parser;
@@ -34,62 +36,6 @@ struct Args {
   file: PathBuf,
 }
 
-/// Concatenate a command and its arguments into a single string.
-fn concat_command<C, A, S>(command: C, args: A) -> OsString
-where
-  C: AsRef<OsStr>,
-  A: IntoIterator<Item = S>,
-  S: AsRef<OsStr>,
-{
-  args
-    .into_iter()
-    .fold(command.as_ref().to_os_string(), |mut cmd, arg| {
-      cmd.push(OsStr::new(" "));
-      cmd.push(arg.as_ref());
-      cmd
-    })
-}
-
-
-/// Format a command with the given list of arguments as a string.
-fn format_command<C, A, S>(command: C, args: A) -> String
-where
-  C: AsRef<OsStr>,
-  A: IntoIterator<Item = S>,
-  S: AsRef<OsStr>,
-{
-  concat_command(command, args).to_string_lossy().to_string()
-}
-
-
-fn evaluate<C, A, S>(output: &Output, command: C, args: A) -> Result<()>
-where
-  C: AsRef<OsStr>,
-  A: IntoIterator<Item = S>,
-  S: AsRef<OsStr>,
-{
-  if !output.status.success() {
-    let code = if let Some(code) = output.status.code() {
-      format!(" ({code})")
-    } else {
-      " (terminated by signal)".to_string()
-    };
-
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    let stderr = stderr.trim_end();
-    let stderr = if !stderr.is_empty() {
-      format!(": {stderr}")
-    } else {
-      String::new()
-    };
-
-    bail!(
-      "`{}` reported non-zero exit-status{code}{stderr}",
-      format_command(command, args),
-    );
-  }
-  Ok(())
-}
 
 /// Run a command with the provided arguments.
 fn run_impl<C, A, S, D>(command: C, args: A, dir: D, stdout: Stdio) -> Result<Output>
