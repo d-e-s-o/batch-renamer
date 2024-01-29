@@ -75,21 +75,10 @@ where
 }
 
 
-fn main() -> Result<()> {
-  let args = match Args::try_parse_from(args_os()) {
-    Ok(args) => args,
-    Err(err) => match err.kind() {
-      ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
-        print!("{}", err);
-        return Ok(())
-      },
-      _ => return Err(err).context("failed to parse program arguments"),
-    },
-  };
-
+fn rename(file: &Path, command: &[OsString], dry_run: bool) -> Result<PathBuf> {
   let tmp = tempdir().context("failed to create temporary directory")?;
-  let path = canonicalize(&args.file)
-    .with_context(|| format!("failed to canonicalize `{}`", args.file.display()))?;
+  let path =
+    canonicalize(file).with_context(|| format!("failed to canonicalize `{}`", file.display()))?;
   let dir = path
     .parent()
     .with_context(|| format!("`{}` does not contain a parent", path.display()))?;
@@ -100,9 +89,7 @@ fn main() -> Result<()> {
   let () =
     write(&tmp_file, b"").with_context(|| format!("failed to create `{}`", tmp_file.display()))?;
 
-  // SANITY: `clap` ensures that there is always at least one string
-  //         present.
-  let (cmd, cmd_args) = args.command.split_first().unwrap();
+  let (cmd, cmd_args) = command.split_first().context("rename command is missing")?;
   // Perform the rename in our temporary directory.
   let () = run(
     cmd,
@@ -126,11 +113,29 @@ fn main() -> Result<()> {
     })?
     .with_context(|| format!("failed to read first file of `{}`", tmp.path().display()))?;
 
-  if !args.dry_run {
+  if !dry_run {
     // Perform the rename on the live data.
     let () = run(cmd, cmd_args.iter().chain([&file.to_os_string()]), dir)?;
   }
 
-  println!("{}", dir.join(new.file_name()).display());
+  let new_path = dir.join(new.file_name());
+  Ok(new_path)
+}
+
+
+fn main() -> Result<()> {
+  let args = match Args::try_parse_from(args_os()) {
+    Ok(args) => args,
+    Err(err) => match err.kind() {
+      ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
+        print!("{}", err);
+        return Ok(())
+      },
+      _ => return Err(err).context("failed to parse program arguments"),
+    },
+  };
+
+  let new_path = rename(&args.file, &args.command, args.dry_run)?;
+  println!("{}", new_path.display());
   Ok(())
 }
