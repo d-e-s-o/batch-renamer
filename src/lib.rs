@@ -1,9 +1,21 @@
+#![allow(clippy::let_and_return, clippy::let_unit_value)]
+
 use std::ffi::OsStr;
 use std::ffi::OsString;
+use std::fs::canonicalize;
+use std::fs::read_dir;
+use std::fs::write;
+use std::path::Path;
+use std::path::PathBuf;
+use std::process::Command;
 use std::process::Output;
+use std::process::Stdio;
 
 use anyhow::bail;
+use anyhow::Context as _;
 use anyhow::Result;
+
+use tempfile::tempdir;
 
 
 /// Concatenate a command and its arguments into a single string.
@@ -60,4 +72,90 @@ where
     );
   }
   Ok(())
+}
+
+
+/// Run a command with the provided arguments.
+fn run_in_impl<C, A, S, D>(command: C, args: A, dir: D, stdout: Stdio) -> Result<Output>
+where
+  C: AsRef<OsStr>,
+  A: IntoIterator<Item = S> + Clone,
+  S: AsRef<OsStr>,
+  D: AsRef<Path>,
+{
+  let output = Command::new(command.as_ref())
+    .current_dir(dir)
+    .stdin(Stdio::null())
+    .stdout(stdout)
+    .args(args.clone())
+    .output()
+    .with_context(|| {
+      format!(
+        "failed to run `{}`",
+        format_command(command.as_ref(), args.clone())
+      )
+    })?;
+
+  let () = evaluate(&output, command, args)?;
+  Ok(output)
+}
+
+/// Run a command with the provided arguments.
+fn run_in<C, A, S, D>(command: C, args: A, dir: D) -> Result<()>
+where
+  C: AsRef<OsStr>,
+  A: IntoIterator<Item = S> + Clone,
+  S: AsRef<OsStr>,
+  D: AsRef<Path>,
+{
+  let _output = run_in_impl(command, args, dir, Stdio::null())?;
+  Ok(())
+}
+
+
+pub fn rename(file: &Path, command: &[OsString], dry_run: bool) -> Result<PathBuf> {
+  let tmp = tempdir().context("failed to create temporary directory")?;
+  let path =
+    canonicalize(file).with_context(|| format!("failed to canonicalize `{}`", file.display()))?;
+  let dir = path
+    .parent()
+    .with_context(|| format!("`{}` does not contain a parent", path.display()))?;
+  let file = path
+    .file_name()
+    .with_context(|| format!("path `{}` does not have file name", path.display()))?;
+  let tmp_file = tmp.path().join(file);
+  let () =
+    write(&tmp_file, b"").with_context(|| format!("failed to create `{}`", tmp_file.display()))?;
+
+  let (cmd, cmd_args) = command.split_first().context("rename command is missing")?;
+  // Perform the rename in our temporary directory.
+  let () = run_in(
+    cmd,
+    cmd_args.iter().chain([&file.to_os_string()]),
+    tmp.path(),
+  )?;
+
+  let new = read_dir(tmp.path())
+    .with_context(|| {
+      format!(
+        "failed to read contents of directory `{}`",
+        tmp.path().display()
+      )
+    })?
+    .next()
+    .with_context(|| {
+      format!(
+        "no file found in `{}`; did the rename operation delete instead?",
+        tmp.path().display()
+      )
+    })?
+    .with_context(|| format!("failed to read first file of `{}`", tmp.path().display()))?;
+
+  if !dry_run {
+    // Perform the rename on the live data.
+    let () = run_in(cmd, cmd_args.iter().chain([&file.to_os_string()]), dir)?;
+  }
+
+  let new_path = dir.join(new.file_name());
+  Ok(new_path)
 }
