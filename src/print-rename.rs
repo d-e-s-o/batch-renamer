@@ -38,7 +38,7 @@ struct Args {
 
 
 /// Run a command with the provided arguments.
-fn run_impl<C, A, S, D>(command: C, args: A, dir: D, stdout: Stdio) -> Result<Output>
+fn run_in_impl<C, A, S, D>(command: C, args: A, dir: D, stdout: Stdio) -> Result<Output>
 where
   C: AsRef<OsStr>,
   A: IntoIterator<Item = S> + Clone,
@@ -63,14 +63,14 @@ where
 }
 
 /// Run a command with the provided arguments.
-fn run<C, A, S, D>(command: C, args: A, dir: D) -> Result<()>
+fn run_in<C, A, S, D>(command: C, args: A, dir: D) -> Result<()>
 where
   C: AsRef<OsStr>,
   A: IntoIterator<Item = S> + Clone,
   S: AsRef<OsStr>,
   D: AsRef<Path>,
 {
-  let _output = run_impl(command, args, dir, Stdio::null())?;
+  let _output = run_in_impl(command, args, dir, Stdio::null())?;
   Ok(())
 }
 
@@ -91,7 +91,7 @@ fn rename(file: &Path, command: &[OsString], dry_run: bool) -> Result<PathBuf> {
 
   let (cmd, cmd_args) = command.split_first().context("rename command is missing")?;
   // Perform the rename in our temporary directory.
-  let () = run(
+  let () = run_in(
     cmd,
     cmd_args.iter().chain([&file.to_os_string()]),
     tmp.path(),
@@ -115,7 +115,7 @@ fn rename(file: &Path, command: &[OsString], dry_run: bool) -> Result<PathBuf> {
 
   if !dry_run {
     // Perform the rename on the live data.
-    let () = run(cmd, cmd_args.iter().chain([&file.to_os_string()]), dir)?;
+    let () = run_in(cmd, cmd_args.iter().chain([&file.to_os_string()]), dir)?;
   }
 
   let new_path = dir.join(new.file_name());
