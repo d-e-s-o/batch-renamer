@@ -2,13 +2,11 @@
 
 use std::env::args_os;
 use std::ffi::OsStr;
-use std::ffi::OsString;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 use std::process::Output;
 use std::process::Stdio;
-use std::str;
 
 use anyhow::Context as _;
 use anyhow::Error;
@@ -16,6 +14,7 @@ use anyhow::Result;
 
 use batch_rename::evaluate;
 use batch_rename::format_command;
+use batch_rename::rename;
 
 use futures::stream;
 use futures::stream::StreamExt as _;
@@ -46,17 +45,6 @@ where
   Ok(output)
 }
 
-/// Run a command with the provided arguments.
-fn run<C, A, S>(command: C, args: A) -> Result<()>
-where
-  C: AsRef<OsStr>,
-  A: IntoIterator<Item = S> + Clone,
-  S: AsRef<OsStr>,
-{
-  let _output = run_impl(command, args, Stdio::null())?;
-  Ok(())
-}
-
 /// Run a command and capture its output.
 fn output<C, A, S>(command: C, args: A) -> Result<Vec<u8>>
 where
@@ -83,21 +71,14 @@ async fn main() -> Result<()> {
     .map(|file| {
       let cmd = cmd.clone();
       spawn_blocking(move || {
-        let output = output(
-          "print-rename",
-          [OsString::from("--dry-run")]
-            .iter()
-            .chain(&cmd)
-            .chain([&file]),
-        )?;
-        let path = str::from_utf8(&output)?.trim_end().to_string();
-        Result::<_, Error>::Ok((PathBuf::from(file), PathBuf::from(path)))
+        let path = rename(Path::new(&file), &cmd, true)?;
+        Result::<_, Error>::Ok((PathBuf::from(file), path))
       })
     })
     .buffered(32);
 
   while let Some(result) = src_dst.next().await {
-    let (mut src, dst) = result??;
+    let (src, dst) = result??;
     let src_file = src
       .file_name()
       .with_context(|| format!("path `{}` does not have file name", src.display()))?;
@@ -126,10 +107,8 @@ async fn main() -> Result<()> {
         b"" | b"y" | b"Y" => {
           let cmd = cmd.clone();
           let _handle = spawn_blocking(move || {
-            run(
-              "print-rename",
-              cmd.iter().chain([src.as_mut_os_string() as _]),
-            )
+            let _path = rename(&src, &cmd, false)?;
+            Result::<_, Error>::Ok(())
           });
           break
         },
