@@ -2,6 +2,7 @@
 
 use std::env::args_os;
 use std::ffi::OsStr;
+use std::future::ready;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
@@ -17,7 +18,9 @@ use batch_rename::format_command;
 use batch_rename::rename;
 
 use futures::stream;
+use futures::stream::FuturesUnordered;
 use futures::stream::StreamExt as _;
+use futures::TryStreamExt as _;
 
 use tokio::task::spawn_blocking;
 
@@ -77,7 +80,9 @@ async fn main() -> Result<()> {
     })
     .buffered(32);
 
-  while let Some(result) = src_dst.next().await {
+  let renames = FuturesUnordered::new();
+
+  'outer: while let Some(result) = src_dst.next().await {
     let (src, dst) = result??;
     let src_file = src
       .file_name()
@@ -106,14 +111,15 @@ async fn main() -> Result<()> {
       match output.as_slice() {
         b"" | b"y" | b"Y" => {
           let cmd = cmd.clone();
-          let _handle = spawn_blocking(move || {
+          let handle = spawn_blocking(move || {
             let _path = rename(&src, &cmd, false)?;
             Result::<_, Error>::Ok(())
           });
+          let () = renames.push(handle);
           break
         },
         b"n" | b"N" => break,
-        b"q" => return Ok(()),
+        b"q" => break 'outer,
         _ => {
           println!(
             "Response '{}' not understood",
@@ -123,5 +129,13 @@ async fn main() -> Result<()> {
       }
     }
   }
+
+  // Convert `JoinError` into anyhow's Error and then flatten, before
+  // draining all tasks.
+  let () = renames
+    .map_err(Error::from)
+    .and_then(ready)
+    .try_for_each_concurrent(Some(64), |()| ready(Ok(())))
+    .await?;
   Ok(())
 }
