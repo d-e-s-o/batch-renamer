@@ -22,6 +22,7 @@ use futures::stream::FuturesUnordered;
 use futures::stream::StreamExt as _;
 use futures::TryStreamExt as _;
 
+use tokio::spawn;
 use tokio::task::spawn_blocking;
 
 
@@ -71,19 +72,16 @@ async fn main() -> Result<()> {
   let files = args_os().skip(1 + idx + 1).collect::<Vec<_>>();
 
   let mut src_dst = stream::iter(files.into_iter())
-    .map(|file| {
-      let cmd = cmd.clone();
-      spawn_blocking(move || {
-        let path = rename(Path::new(&file), &cmd, true)?;
-        Result::<_, Error>::Ok((PathBuf::from(file), path))
-      })
+    .map(|file| async {
+      let path = rename(Path::new(&file), &cmd, true).await?;
+      Result::<_, Error>::Ok((PathBuf::from(file), path))
     })
     .buffered(32);
 
   let renames = FuturesUnordered::new();
 
   'outer: while let Some(result) = src_dst.next().await {
-    let (src, dst) = result??;
+    let (src, dst) = result?;
     let src_file = src
       .file_name()
       .with_context(|| format!("path `{}` does not have file name", src.display()))?;
@@ -111,8 +109,8 @@ async fn main() -> Result<()> {
       match output.as_slice() {
         b"" | b"y" | b"Y" => {
           let cmd = cmd.clone();
-          let handle = spawn_blocking(move || {
-            let _path = rename(&src, &cmd, false)?;
+          let handle = spawn(async move {
+            let _path = rename(&src, &cmd, false).await?;
             Result::<_, Error>::Ok(())
           });
           let () = renames.push(handle);

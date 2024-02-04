@@ -26,7 +26,8 @@ struct Args {
 }
 
 
-fn main() -> Result<()> {
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<()> {
   let args = match Args::try_parse_from(args_os()) {
     Ok(args) => args,
     Err(err) => match err.kind() {
@@ -38,7 +39,7 @@ fn main() -> Result<()> {
     },
   };
 
-  let new_path = rename(&args.file, &args.command, args.dry_run)?;
+  let new_path = rename(&args.file, &args.command, args.dry_run).await?;
   println!("{}", new_path.display());
   Ok(())
 }
