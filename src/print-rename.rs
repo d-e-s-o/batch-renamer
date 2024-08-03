@@ -4,7 +4,6 @@ use std::env::args_os;
 use std::ffi::OsString;
 use std::path::PathBuf;
 
-use anyhow::Context as _;
 use anyhow::Result;
 
 use clap::error::ErrorKind;
@@ -35,7 +34,7 @@ async fn main() -> Result<()> {
         print!("{}", err);
         return Ok(())
       },
-      _ => return Err(err).context("failed to parse program arguments"),
+      _ => return Err(err.into()),
     },
   };
 
