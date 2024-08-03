@@ -2,6 +2,9 @@
 
 use std::env::args_os;
 use std::ffi::OsString;
+use std::io::stdout;
+use std::io::Write as _;
+use std::os::unix::ffi::OsStrExt as _;
 use std::path::PathBuf;
 
 use anyhow::Result;
@@ -39,6 +42,6 @@ async fn main() -> Result<()> {
   };
 
   let new_path = rename(&args.file, &args.command, args.dry_run).await?;
-  println!("{}", new_path.display());
+  let () = stdout().write_all(new_path.as_os_str().as_bytes())?;
   Ok(())
 }
