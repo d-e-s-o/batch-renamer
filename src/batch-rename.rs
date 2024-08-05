@@ -2,6 +2,7 @@
 
 use std::env::args_os;
 use std::ffi::OsStr;
+use std::ffi::OsString;
 use std::future::ready;
 use std::path::Path;
 use std::path::PathBuf;
@@ -17,6 +18,9 @@ use batch_rename::evaluate;
 use batch_rename::format_command;
 use batch_rename::rename;
 
+use clap::error::ErrorKind;
+use clap::Parser;
+
 use futures::stream;
 use futures::stream::FuturesUnordered;
 use futures::stream::StreamExt as _;
@@ -24,6 +28,17 @@ use futures::TryStreamExt as _;
 
 use tokio::spawn;
 use tokio::task::spawn_blocking;
+
+
+#[derive(Debug, Parser)]
+struct Args {
+  /// The command (and arguments) to use for renaming the file(s).
+  #[clap(required = true)]
+  command: Vec<OsString>,
+  /// The files to rename.
+  #[clap(last = true)]
+  files: Vec<PathBuf>,
+}
 
 
 /// Run a command with the provided arguments.
@@ -63,18 +78,26 @@ where
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
-  let (idx, _arg) = args_os()
-    .skip(1)
-    .enumerate()
-    .find(|(_idx, arg)| arg == "--")
-    .with_context(|| "Usage: {} <rename-command-and-args> -- <files...")?;
-  let cmd = args_os().skip(1).take(idx).collect::<Vec<_>>();
-  let files = args_os().skip(1 + idx + 1).collect::<Vec<_>>();
+  let args = match Args::try_parse_from(args_os()) {
+    Ok(args) => args,
+    Err(err) => match err.kind() {
+      ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
+        print!("{}", err);
+        return Ok(())
+      },
+      _ => return Err(err.into()),
+    },
+  };
+
+  let Args {
+    command: cmd,
+    files,
+  } = args;
 
   let mut src_dst = stream::iter(files.into_iter())
     .map(|file| async {
       let path = rename(Path::new(&file), &cmd, true).await?;
-      Result::<_, Error>::Ok((PathBuf::from(file), path))
+      Result::<_, Error>::Ok((file, path))
     })
     .buffered(32);
 
