@@ -1,7 +1,22 @@
 [package]
-name = "batch-rename"
-version = "0.0.0"
+name = "batch-renamer"
+version = "0.1.0"
+authors = ["Daniel Mueller <deso@posteo.net>"]
 edition = "2021"
+license = "GPL-3.0-or-later"
+homepage = "https://github.com/d-e-s-o/batch-renamer"
+repository = "https://github.com/d-e-s-o/batch-renamer.git"
+readme = "README.md"
+categories = [
+  "asynchronous",
+  "filesystem",
+  "command-line-utilities",
+]
+keywords = ["rename", "cli", "async", "filesystem"]
+description = """
+Framework and command line utilities for interactive renaming of a
+potentially large number of files.
+"""
 default-run = "batch-rename"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

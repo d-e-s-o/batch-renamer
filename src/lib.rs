@@ -1,3 +1,6 @@
+// Copyright (C) 2024 Daniel Mueller <deso@posteo.net>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #![allow(clippy::let_and_return, clippy::let_unit_value)]
 
 use std::ffi::OsStr;
@@ -36,6 +39,7 @@ where
 }
 
 /// Format a command with the given list of arguments as a string.
+#[doc(hidden)]
 pub fn format_command<C, A, S>(command: C, args: A) -> String
 where
   C: AsRef<OsStr>,
@@ -46,6 +50,7 @@ where
 }
 
 
+#[doc(hidden)]
 pub fn evaluate<C, A, S>(output: &Output, command: C, args: A) -> Result<()>
 where
   C: AsRef<OsStr>,
@@ -115,6 +120,10 @@ where
 }
 
 
+/// Rename a file using the provided command.
+///
+/// The function returns the new name. If `dry_run` is `true`, don't
+/// actually perform the rename but just "simulate" it.
 pub async fn rename(file: &Path, command: &[OsString], dry_run: bool) -> Result<PathBuf> {
   let tmp = tempdir().context("failed to create temporary directory")?;
   let path = canonicalize(file)

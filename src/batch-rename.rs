@@ -1,3 +1,6 @@
+// Copyright (C) 2024 Daniel Mueller <deso@posteo.net>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #![allow(clippy::let_and_return, clippy::let_unit_value)]
 
 use std::env::args_os;
@@ -14,9 +17,9 @@ use anyhow::Context as _;
 use anyhow::Error;
 use anyhow::Result;
 
-use batch_rename::evaluate;
-use batch_rename::format_command;
-use batch_rename::rename;
+use batch_renamer::evaluate;
+use batch_renamer::format_command;
+use batch_renamer::rename;
 
 use clap::error::ErrorKind;
 use clap::Parser;
