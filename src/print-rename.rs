@@ -19,6 +19,7 @@ use batch_renamer::rename;
 
 
 #[derive(Debug, Parser)]
+#[clap(name = "print-rename", version = env!("VERSION"))]
 struct Args {
   /// Do not actually perform the rename.
   #[clap(short = 'n', long = "dry-run")]
