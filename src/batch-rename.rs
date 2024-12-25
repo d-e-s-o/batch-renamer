@@ -34,6 +34,7 @@ use tokio::task::spawn_blocking;
 
 
 #[derive(Debug, Parser)]
+#[clap(version = env!("VERSION"))]
 struct Args {
   /// The command (and arguments) to use for renaming the file(s).
   #[clap(required = true)]

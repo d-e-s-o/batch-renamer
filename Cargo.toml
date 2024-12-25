@@ -29,6 +29,10 @@ path = "src/batch-rename.rs"
 name = "print-rename"
 path = "src/print-rename.rs"
 
+[build-dependencies]
+anyhow = "1.0.68"
+grev = "0.1.3"
+
 [dependencies]
 anyhow = "1.0.68"
 clap = { version = "4.1.4", features = ["derive"] }
