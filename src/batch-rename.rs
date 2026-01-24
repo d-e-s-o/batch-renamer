@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Daniel Mueller <deso@posteo.net>
+// Copyright (C) 2024-2026 Daniel Mueller <deso@posteo.net>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #![allow(clippy::let_and_return, clippy::let_unit_value)]
@@ -55,6 +55,7 @@ where
   let output = Command::new(command.as_ref())
     .stdin(Stdio::inherit())
     .stdout(stdout)
+    .stderr(Stdio::piped())
     .args(args.clone())
     .output()
     .with_context(|| {
