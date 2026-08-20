@@ -149,7 +149,7 @@ async fn main() -> Result<()> {
         _ => {
           println!(
             "Response '{}' not understood",
-            &String::from_utf8_lossy(&output)
+            String::from_utf8_lossy(&output)
           )
         },
       }
