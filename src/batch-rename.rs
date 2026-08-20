@@ -1,7 +1,8 @@
 // Copyright (C) 2024-2026 Daniel Mueller <deso@posteo.net>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#![allow(clippy::let_and_return, clippy::let_unit_value)]
+//! A command line utility for interactive renaming of a potentially
+//! large number of files.
 
 use std::env::args_os;
 use std::ffi::OsStr;
@@ -87,7 +88,7 @@ async fn main() -> Result<()> {
     Ok(args) => args,
     Err(err) => match err.kind() {
       ErrorKind::DisplayHelp | ErrorKind::DisplayVersion => {
-        print!("{}", err);
+        print!("{err}");
         return Ok(())
       },
       _ => return Err(err.into()),

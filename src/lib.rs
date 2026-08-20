@@ -1,7 +1,7 @@
 // Copyright (C) 2024-2026 Daniel Mueller <deso@posteo.net>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#![allow(clippy::let_and_return, clippy::let_unit_value)]
+//! Building blocks for batch renaming of files.
 
 use std::ffi::OsStr;
 use std::ffi::OsString;
