@@ -14,8 +14,8 @@ categories = [
 ]
 keywords = ["rename", "cli", "async", "filesystem"]
 description = """
-Framework and command line utilities for interactive renaming of a
-potentially large number of files.
+A command line utility for interactive renaming of a potentially large
+number of files.
 """
 default-run = "batch-rename"
 
@@ -24,10 +24,6 @@ default-run = "batch-rename"
 [[bin]]
 name = "batch-rename"
 path = "src/batch-rename.rs"
-
-[[bin]]
-name = "print-rename"
-path = "src/print-rename.rs"
 
 [build-dependencies]
 anyhow = "1.0.68"
