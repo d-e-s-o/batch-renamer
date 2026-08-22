@@ -97,13 +97,13 @@ async fn main() -> Result<()> {
 
   let Args {
     command: cmd,
-    files,
+    files: paths,
   } = args;
 
-  let mut src_dst = stream::iter(files.into_iter())
-    .map(|file| async {
-      let path = rename(Path::new(&file), &cmd, true).await?;
-      Result::<_, Error>::Ok((file, path))
+  let mut src_dst = stream::iter(paths)
+    .map(|path| async {
+      let new_path = rename(Path::new(&path), &cmd, true).await?;
+      Result::<_, Error>::Ok((path, new_path))
     })
     .buffered(32);
 

@@ -125,11 +125,11 @@ where
 ///
 /// The function returns the new name. If `dry_run` is `true`, don't
 /// actually perform the rename but just "simulate" it.
-pub async fn rename(file: &Path, command: &[OsString], dry_run: bool) -> Result<PathBuf> {
+pub async fn rename(path: &Path, command: &[OsString], dry_run: bool) -> Result<PathBuf> {
   let tmp = tempdir().context("failed to create temporary directory")?;
-  let path = canonicalize(file)
+  let path = canonicalize(path)
     .await
-    .with_context(|| format!("failed to canonicalize `{}`", file.display()))?;
+    .with_context(|| format!("failed to canonicalize `{}`", path.display()))?;
   let dir = path
     .parent()
     .with_context(|| format!("`{}` does not contain a parent", path.display()))?;
