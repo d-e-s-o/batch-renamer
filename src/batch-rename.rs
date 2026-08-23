@@ -110,14 +110,14 @@ async fn main() -> Result<()> {
   let renames = FuturesUnordered::new();
 
   'outer: while let Some(result) = src_dst.next().await {
-    let (src, dst) = result?;
-    let src_file = src
+    let (src_path, dst_path) = result?;
+    let src_file = src_path
       .file_name()
-      .with_context(|| format!("path `{}` does not have file name", src.display()))?;
+      .with_context(|| format!("path `{}` does not have file name", src_path.display()))?;
     let src_file = Path::new(src_file);
-    let dst_file = dst
+    let dst_file = dst_path
       .file_name()
-      .with_context(|| format!("path `{}` does not have file name", dst.display()))?;
+      .with_context(|| format!("path `{}` does not have file name", dst_path.display()))?;
     let dst_file = Path::new(dst_file);
 
     if src_file == dst_file {
@@ -139,7 +139,7 @@ async fn main() -> Result<()> {
         b"" | b"y" | b"Y" => {
           let cmd = cmd.clone();
           let handle = spawn(async move {
-            let _path = rename(&src, &cmd, false).await?;
+            let _path = rename(&src_path, &cmd, false).await?;
             Result::<_, Error>::Ok(())
           });
           let () = renames.push(handle);
