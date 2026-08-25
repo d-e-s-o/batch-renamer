@@ -30,6 +30,7 @@ use futures::stream::FuturesUnordered;
 use futures::stream::StreamExt as _;
 use futures::TryStreamExt as _;
 
+use tokio::fs;
 use tokio::spawn;
 use tokio::task::spawn_blocking;
 
@@ -137,9 +138,17 @@ async fn main() -> Result<()> {
 
       match output.as_slice() {
         b"" | b"y" | b"Y" => {
-          let cmd = cmd.clone();
+          let src_path = src_path.to_path_buf();
+          let dst_file = dst_file.to_path_buf();
+
           let handle = spawn(async move {
-            let _path = rename(&src_path, &cmd, false).await?;
+            let () = fs::rename(&src_path, &dst_file).await.with_context(|| {
+              format!(
+                "failed to rename `{}` to `{}`",
+                src_path.display(),
+                dst_file.display(),
+              )
+            })?;
             Result::<_, Error>::Ok(())
           });
           let () = renames.push(handle);
