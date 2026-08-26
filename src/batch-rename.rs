@@ -103,7 +103,7 @@ async fn main() -> Result<()> {
 
   let mut src_dst = stream::iter(paths)
     .map(|path| async {
-      let new_path = rename(Path::new(&path), &cmd, true).await?;
+      let new_path = rename(Path::new(&path), &cmd).await?;
       Result::<_, Error>::Ok((path, new_path))
     })
     .buffered(32);

@@ -121,11 +121,10 @@ where
 }
 
 
-/// Rename a file using the provided command.
+/// Simulate a rename of a file using the provided command.
 ///
-/// The function returns the new name. If `dry_run` is `true`, don't
-/// actually perform the rename but just "simulate" it.
-pub async fn rename(path: &Path, command: &[OsString], dry_run: bool) -> Result<PathBuf> {
+/// The rename is performed in a temporary directory.
+pub async fn rename(path: &Path, command: &[OsString]) -> Result<PathBuf> {
   let tmp = tempdir().context("failed to create temporary directory")?;
   let path = canonicalize(path)
     .await
@@ -167,11 +166,6 @@ pub async fn rename(path: &Path, command: &[OsString], dry_run: bool) -> Result<
       )
     })?
     .with_context(|| format!("failed to read first file of `{}`", tmp.path().display()))?;
-
-  if !dry_run {
-    // Perform the rename on the live data.
-    let () = run_in(cmd, cmd_args.iter().chain([&file.to_os_string()]), dir).await?;
-  }
 
   let new_path = dir.join(new.file_name());
   Ok(new_path)
