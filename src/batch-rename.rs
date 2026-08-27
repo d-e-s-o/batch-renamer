@@ -103,23 +103,18 @@ async fn main() -> Result<()> {
 
   let mut src_dst = stream::iter(paths)
     .map(|path| async {
-      let new_path = rename(Path::new(&path), &cmd).await?;
-      Result::<_, Error>::Ok((path, new_path))
+      let new_file = rename(Path::new(&path), &cmd).await?;
+      Result::<_, Error>::Ok((path, new_file))
     })
     .buffered(32);
 
   let renames = FuturesUnordered::new();
 
   'outer: while let Some(result) = src_dst.next().await {
-    let (src_path, dst_path) = result?;
+    let (src_path, dst_file) = result?;
     let src_file = src_path
       .file_name()
       .with_context(|| format!("path `{}` does not have file name", src_path.display()))?;
-    let src_file = Path::new(src_file);
-    let dst_file = dst_path
-      .file_name()
-      .with_context(|| format!("path `{}` does not have file name", dst_path.display()))?;
-    let dst_file = Path::new(dst_file);
 
     if src_file == dst_file {
       continue
@@ -139,7 +134,7 @@ async fn main() -> Result<()> {
       match output.as_slice() {
         b"" | b"y" | b"Y" => {
           let src_path = src_path.to_path_buf();
-          let dst_file = dst_file.to_path_buf();
+          let dst_file = dst_file.to_os_string();
 
           let handle = spawn(async move {
             let () = fs::rename(&src_path, &dst_file).await.with_context(|| {

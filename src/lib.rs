@@ -6,7 +6,6 @@
 use std::ffi::OsStr;
 use std::ffi::OsString;
 use std::path::Path;
-use std::path::PathBuf;
 use std::process::Output;
 use std::process::Stdio;
 
@@ -123,15 +122,13 @@ where
 
 /// Simulate a rename of a file using the provided command.
 ///
-/// The rename is performed in a temporary directory.
-pub async fn rename(path: &Path, command: &[OsString]) -> Result<PathBuf> {
+/// The rename is performed in a temporary directory and returned is
+/// only the new file name, excluding any path.
+pub async fn rename(path: &Path, command: &[OsString]) -> Result<OsString> {
   let tmp = tempdir().context("failed to create temporary directory")?;
   let path = canonicalize(path)
     .await
     .with_context(|| format!("failed to canonicalize `{}`", path.display()))?;
-  let dir = path
-    .parent()
-    .with_context(|| format!("`{}` does not contain a parent", path.display()))?;
   let file = path
     .file_name()
     .with_context(|| format!("path `{}` does not have file name", path.display()))?;
@@ -167,6 +164,5 @@ pub async fn rename(path: &Path, command: &[OsString]) -> Result<PathBuf> {
     })?
     .with_context(|| format!("failed to read first file of `{}`", tmp.path().display()))?;
 
-  let new_path = dir.join(new.file_name());
-  Ok(new_path)
+  Ok(new.file_name())
 }
