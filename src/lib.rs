@@ -124,7 +124,7 @@ where
 ///
 /// The rename is performed in a temporary directory and returned is
 /// only the new file name, excluding any path.
-pub async fn rename(path: &Path, command: &[OsString]) -> Result<OsString> {
+pub async fn simulate_rename(path: &Path, command: &[OsString]) -> Result<OsString> {
   let tmp = tempdir().context("failed to create temporary directory")?;
   let path = canonicalize(path)
     .await

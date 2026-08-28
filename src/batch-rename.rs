@@ -20,7 +20,7 @@ use anyhow::Result;
 
 use batch_renamer::evaluate;
 use batch_renamer::format_command;
-use batch_renamer::rename;
+use batch_renamer::simulate_rename;
 
 use clap::error::ErrorKind;
 use clap::Parser;
@@ -103,7 +103,7 @@ async fn main() -> Result<()> {
 
   let mut src_dst = stream::iter(paths)
     .map(|path| async {
-      let new_file = rename(Path::new(&path), &cmd).await?;
+      let new_file = simulate_rename(Path::new(&path), &cmd).await?;
       Result::<_, Error>::Ok((path, new_file))
     })
     .buffered(32);
