@@ -17,13 +17,8 @@ description = """
 A command line utility for interactive renaming of a potentially large
 number of files.
 """
-default-run = "batch-rename"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[[bin]]
-name = "batch-rename"
-path = "src/batch-rename.rs"
 
 [build-dependencies]
 anyhow = "1.0.68"
