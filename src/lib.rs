@@ -3,6 +3,8 @@
 
 //! Building blocks for batch renaming of files.
 
+#![doc(hidden)]
+
 use std::ffi::OsStr;
 use std::ffi::OsString;
 use std::path::Path;
@@ -38,7 +40,6 @@ where
 }
 
 /// Format a command with the given list of arguments as a string.
-#[doc(hidden)]
 pub fn format_command<C, A, S>(command: C, args: A) -> String
 where
   C: AsRef<OsStr>,
@@ -49,7 +50,7 @@ where
 }
 
 
-#[doc(hidden)]
+/// Evaluate the result of a command invocation.
 pub fn evaluate<C, A, S>(output: &Output, command: C, args: A) -> Result<()>
 where
   C: AsRef<OsStr>,
