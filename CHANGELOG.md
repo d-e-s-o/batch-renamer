@@ -1,5 +1,5 @@
-Unreleased
-----------
+0.2.0
+-----
 - Removed `print-rename` binary
 - Made previously public functions implementation details
 
